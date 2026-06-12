@@ -42,6 +42,14 @@ observability = {
     metrics_generator_enabled = true
   }
 
+  alloy = {
+    enabled          = false
+    release_name     = "alloy"
+    chart_repository = "https://grafana.github.io/helm-charts"
+    chart_name       = "alloy"
+    chart_version    = null
+  }
+
   prometheus = {
     enabled          = true
     release_name     = "prometheus"

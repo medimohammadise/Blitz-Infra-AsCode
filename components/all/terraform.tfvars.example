@@ -124,6 +124,9 @@ observability = {
   tempo = {
     enabled = false
   }
+  alloy = {
+    enabled = false
+  }
 }
 
 recreate_revision = ""

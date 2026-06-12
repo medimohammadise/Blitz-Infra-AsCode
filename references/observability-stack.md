@@ -26,7 +26,7 @@ flowchart TD
         A3[Pod C]
     end
 
-    subgraph Alloy["Grafana Alloy (DaemonSet)"]
+    subgraph Alloy["Grafana Alloy (Deployment)"]
         LC[Log Collector\nloki.source.kubernetes]
         OR[OTLP Receiver\notelcol.receiver.otlp\n:4317 / :4318]
     end
@@ -62,7 +62,9 @@ flowchart TD
 
 ## Grafana Alloy
 
-Alloy is the **collector** — it runs as a DaemonSet (one pod per node) and is responsible for gathering telemetry and shipping it to the right backend.
+Alloy is the **collector**. This stack runs one Deployment replica so every span
+from a distributed trace reaches the same processing pipeline. Alloy receives
+OTLP on ports 4317/4318, batches spans, and forwards them to Tempo.
 
 In this stack Alloy does two things:
 

@@ -45,8 +45,18 @@ locals {
           url       = "http://${var.tempo.release_name}.${var.namespace}.svc.cluster.local:3200"
           isDefault = !local.prometheus_enabled
           jsonData = {
-            tracesToLogs = {
-              datasourceUid = "loki"
+            tracesToLogsV2 = {
+              datasourceUid      = "loki"
+              spanStartTimeShift = "-1m"
+              spanEndTimeShift   = "1m"
+              filterByTraceID    = true
+              filterBySpanID     = false
+            }
+            serviceMap = {
+              datasourceUid = "prometheus"
+            }
+            nodeGraph = {
+              enabled = true
             }
           }
         }
@@ -260,7 +270,8 @@ resource "helm_release" "alloy" {
   values = [
     yamlencode({
       controller = {
-        type = "daemonset"
+        type     = "deployment"
+        replicas = 1
       }
       rbac = {
         create = true
@@ -269,6 +280,20 @@ resource "helm_release" "alloy" {
         create = true
       }
       alloy = {
+        extraPorts = [
+          {
+            name       = "otlp-grpc"
+            port       = 4317
+            targetPort = 4317
+            protocol   = "TCP"
+          },
+          {
+            name       = "otlp-http"
+            port       = 4318
+            targetPort = 4318
+            protocol   = "TCP"
+          },
+        ]
         configMap = {
           content = <<-ALLOY
             // Kubernetes pod log discovery
@@ -312,6 +337,15 @@ resource "helm_release" "alloy" {
             otelcol.receiver.otlp "default" {
               grpc { endpoint = "0.0.0.0:4317" }
               http { endpoint = "0.0.0.0:4318" }
+              output {
+                traces = [otelcol.processor.batch.default.input]
+              }
+            }
+
+            otelcol.processor.batch "default" {
+              timeout             = "1s"
+              send_batch_size     = 1024
+              send_batch_max_size = 2048
               output {
                 traces = [otelcol.exporter.otlp.tempo.input]
               }
